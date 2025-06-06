@@ -32,7 +32,7 @@ if os.path.exists(USERS_FILE):
         users = pickle.load(f)
 else:
     users = {
-        "admin@example.com": {"password": hashlib.sha256("admin123".encode()).hexdigest()}
+        "hari@gmail.com": {"password": hashlib.sha256("admin123".encode()).hexdigest()}
     }
 
 def save_users():
