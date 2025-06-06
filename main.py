@@ -46,12 +46,12 @@ def login_page():
             st.session_state.logged_in = True
             st.session_state.email = email
             st.success("Login successful!")
-            st.experimental_rerun()
+            
         else:
             st.error("Invalid email or password.")
     if st.button("Go to Signup"):
         st.session_state.page = "signup"
-        st.experimental_rerun()
+        
 
 def signup_page():
     st.title("📝 Signup")
