@@ -13,7 +13,7 @@ import pickle
 
 # --- User credentials (For demo; move to secrets in production) ---
 USER_CREDENTIALS = {
-    "user1@example.com": "pass123",
+    "kilambihari@gmail.com": "pass123",
     "admin@example.com": "adminpass"
 }
 
