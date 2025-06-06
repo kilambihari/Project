@@ -11,7 +11,7 @@ import time
 import base64
 import pickle
 import hashlib
-import pyrebase
+import pyrebase4
 from urllib.parse import urlencode
 
 # --- Config ---
