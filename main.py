@@ -12,23 +12,27 @@ import base64
 import pickle
 import hashlib
 
-# --- Streamlit page config ---
+# --- Config ---
 st.set_page_config(page_title="☁️ AI Marketing Generator", layout="centered")
 
-# --- Load API key from secrets ---
 API_KEY = st.secrets.get("GEMINI_API_KEY")
 if not API_KEY:
-    st.error("If API key is not found, Set your GEMINI_API_KEY in Streamlit secrets.")
+    st.error("Please set your GEMINI_API_KEY in Streamlit secrets.")
     st.stop()
 
-# --- Authentication System ---
 USERS_FILE = "users.pkl"
+CACHE_FILE = "generation_cache.pkl"
+
+# --- User management ---
 
 if os.path.exists(USERS_FILE):
     with open(USERS_FILE, "rb") as f:
         users = pickle.load(f)
 else:
-    users = {}
+    # Pre-create an admin user here with password 'admin123' (hashed)
+    users = {
+        "admin@example.com": {"password": hashlib.sha256("admin123".encode()).hexdigest()}
+    }
 
 def save_users():
     with open(USERS_FILE, "wb") as f:
@@ -36,6 +40,8 @@ def save_users():
 
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
+
+# --- Authentication pages ---
 
 def login_page():
     st.title("🔐 Login")
@@ -46,12 +52,12 @@ def login_page():
             st.session_state.logged_in = True
             st.session_state.email = email
             st.success("Login successful!")
-            
+            st.experimental_rerun()
         else:
             st.error("Invalid email or password.")
     if st.button("Go to Signup"):
         st.session_state.page = "signup"
-        
+        st.experimental_rerun()
 
 def signup_page():
     st.title("📝 Signup")
@@ -65,68 +71,22 @@ def signup_page():
             save_users()
             st.success("Signup successful! Please log in.")
             st.session_state.page = "login"
-            
+            st.experimental_rerun()
     if st.button("Go to Login"):
         st.session_state.page = "login"
+        st.experimental_rerun()
 
 def logout():
     st.session_state.logged_in = False
     st.session_state.email = ""
+    st.experimental_rerun()
 
 def admin_dashboard():
     st.subheader("👑 Admin Dashboard")
     st.info("Welcome, admin! You can view user stats here.")
     st.write(users)
 
-# --- App Entry ---
-if "logged_in" not in st.session_state:
-    st.session_state.logged_in = False
-    st.session_state.page = "login"
-
-if not st.session_state.logged_in:
-    if st.session_state.page == "login":
-        login_page()
-    else:
-        signup_page()
-    st.stop()
-
-# --- Show logout and admin dashboard ---
-st.sidebar.success(f"Logged in as {st.session_state.email}")
-if st.sidebar.button("Logout"):
-    logout()
-if st.session_state.email == "admin@example.com":
-    admin_dashboard()
-
-# --- Background & Styling ---
-def get_base64_bg(path):
-    with open(path, "rb") as f:
-        data = f.read()
-    return base64.b64encode(data).decode()
-
-background_path = "pexels-freestockpro-31391838.jpg"
-bg_base64 = get_base64_bg(background_path)
-
-st.markdown(f"""
-<style>
-html, body, [data-testid="stApp"] {{
-    background-image: url("data:image/jpg;base64,{bg_base64}");
-    background-size: cover;
-    background-repeat: no-repeat;
-    background-attachment: fixed;
-    background-position: center;
-    color: #f3f3f3;
-    font-family: 'Segoe UI', sans-serif;
-}}
-/* rest of CSS unchanged */
-</style>
-""", unsafe_allow_html=True)
-
-st.markdown("""
-<div class="title-container">
-    <h1>☁️ AI Marketing Idea Generator</h1>
-    <p class="subtitle">Catchy <b>slogans</b>, <b>ad copies</b> and <b> Bold campaign ideas. AI Marketing, Simplified.</b></p>
-</div>
-""", unsafe_allow_html=True)
+# --- Gemini LLM wrapper ---
 
 class GeminiLLM(LLM):
     model_name: str = "gemini-1.5-flash"
@@ -150,24 +110,79 @@ class GeminiLLM(LLM):
         generations = [[{"text": self._call(prompt, stop)}] for prompt in prompts]
         return LLMResult(generations=generations)
 
-def type_writer_effect(text, speed=0.02):
-    output = ""
-    placeholder = st.empty()
-    for char in text:
-        output += char
-        placeholder.markdown(f"<div class='typing'>{output}</div>", unsafe_allow_html=True)
-        time.sleep(speed)
+# --- Background & Styling ---
 
-CACHE_FILE = "generation_cache.pkl"
+def get_base64_bg(path):
+    with open(path, "rb") as f:
+        data = f.read()
+    return base64.b64encode(data).decode()
+
+background_path = "pexels-freestockpro-31391838.jpg"
+bg_base64 = get_base64_bg(background_path)
+
+st.markdown(f"""
+<style>
+html, body, [data-testid="stApp"] {{
+    background-image: url("data:image/jpg;base64,{bg_base64}");
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-position: center;
+    color: #f3f3f3;
+    font-family: 'Segoe UI', sans-serif;
+}}
+.title-container {{
+    text-align: center;
+    margin-bottom: 30px;
+}}
+.output-box {{
+    background: rgba(0, 0, 0, 0.6);
+    padding: 15px;
+    border-radius: 10px;
+    font-size: 18px;
+    margin-top: 15px;
+}}
+</style>
+""", unsafe_allow_html=True)
+
+st.markdown("""
+<div class="title-container">
+    <h1>☁️ AI Marketing Idea Generator</h1>
+    <p class="subtitle">Catchy <b>slogans</b>, <b>ad copies</b> and <b>bold campaign ideas. AI Marketing, Simplified.</b></p>
+</div>
+""", unsafe_allow_html=True)
+
+# --- Main app ---
+
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
+    st.session_state.page = "login"
+    st.session_state.email = ""
+
+if not st.session_state.logged_in:
+    if st.session_state.page == "login":
+        login_page()
+    else:
+        signup_page()
+    st.stop()
+
+# Show sidebar info and logout
+st.sidebar.success(f"Logged in as {st.session_state.email}")
+if st.sidebar.button("Logout"):
+    logout()
+
+if st.session_state.email == "admin@example.com":
+    admin_dashboard()
+
+# --- Caching generation ---
 if os.path.exists(CACHE_FILE):
     with open(CACHE_FILE, "rb") as f:
         cache = pickle.load(f)
 else:
     cache = {}
 
-# --- Generator ---
-task_type = st.selectbox(" Select what you want to generate:", ["Slogan", "Ad Copy", "Campaign Idea"])
-user_input = st.text_input(" Describe your product or brand:", "e.g. 'A new eco-friendly recycled cotton clothing'").strip()
+task_type = st.selectbox("Select what you want to generate:", ["Slogan", "Ad Copy", "Campaign Idea"])
+user_input = st.text_input("Describe your product or brand:", "e.g. 'A new eco-friendly recycled cotton clothing'").strip()
 
 prompt_templates = {
     "Slogan": "Create a catchy marketing slogan for: {product}",
@@ -196,7 +211,8 @@ if user_input:
                     result = None
 
         if result:
-            st.markdown(" 🎯 Generated Output")
+            st.markdown("🎯 Generated Output")
             st.markdown(f'<div class="output-box">{result}</div>', unsafe_allow_html=True)
 else:
     st.info("Fill in the product/brand description to begin.")
+
