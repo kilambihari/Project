@@ -76,22 +76,50 @@ html, body, [data-testid="stApp"] {{
     background-repeat: no-repeat;
     background-attachment: fixed;
     background-position: center;
-    color: #f3f3f3;
+    color: #ffffff;
     font-family: 'Segoe UI', sans-serif;
 }}
+
 .title-container {{
     text-align: center;
     margin-bottom: 30px;
+    background-color: rgba(0, 0, 0, 0.5);  /* Semi-transparent dark background */
+    padding: 20px;
+    border-radius: 15px;
 }}
+
+.title-container h1 {{
+    font-size: 40px;
+    margin-bottom: 10px;
+    color: white;
+    text-shadow: 2px 2px 5px rgba(0,0,0,0.8);
+}}
+
+.title-container .subtitle {{
+    font-size: 18px;
+    color: #f1f1f1;
+    text-shadow: 1px 1px 4px rgba(0,0,0,0.7);
+}}
+
 .output-box {{
-    background: rgba(0, 0, 0, 0.6);
+    background: rgba(0, 0, 0, 0.6);  /* Dark background for generated text */
     padding: 15px;
     border-radius: 10px;
     font-size: 18px;
     margin-top: 15px;
+    color: #ffffff;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.6);
 }}
-</style>
-""", unsafe_allow_html=True)
+
+[data-testid="stSelectbox"] label,
+[data-testid="stTextInput"] label {{
+    color: #f3f3f3;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6);
+}}
+
+[data-testid="stTextInput"] input {{
+    back
+
 
 st.markdown("""
 <div class="title-container">
