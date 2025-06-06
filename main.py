@@ -127,7 +127,7 @@ else:
 # -------------------
 USER_CREDENTIALS = {
     "kilambihari@gmail.com": "password123",
-    "user@example.com": "welcome"
+    "harivadan@gmail.com": "welcome"
 }
 
 # -------------------
