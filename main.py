@@ -11,25 +11,26 @@ import time
 import base64
 import pickle
 import hashlib
+import pyrebase
+from urllib.parse import urlencode
 
 # --- Config ---
 st.set_page_config(page_title="☁️ AI Marketing Generator", layout="centered")
 
 API_KEY = st.secrets.get("GEMINI_API_KEY")
-if not API_KEY:
-    st.error("Please set your GEMINI_API_KEY in Streamlit secrets.")
-    st.stop()
+firebase_config = st.secrets["firebase"]
+
+firebase = pyrebase.initialize_app(firebase_config)
+auth = firebase.auth()
 
 USERS_FILE = "users.pkl"
 CACHE_FILE = "generation_cache.pkl"
 
-# --- User management ---
-
+# --- User Management (email/password) ---
 if os.path.exists(USERS_FILE):
     with open(USERS_FILE, "rb") as f:
         users = pickle.load(f)
 else:
-    # Pre-create an admin user here with password 'admin123' (hashed)
     users = {
         "admin@example.com": {"password": hashlib.sha256("admin123".encode()).hexdigest()}
     }
@@ -41,10 +42,29 @@ def save_users():
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
-# --- Authentication pages ---
+# --- Google Login ---
+def google_login_button():
+    redirect_uri = "http://localhost:8501"  # Change if hosted online
+    google_auth_url = f"https://accounts.google.com/o/oauth2/v2/auth?{urlencode({
+        'client_id': firebase_config['apiKey'],
+        'redirect_uri': redirect_uri,
+        'response_type': 'token',
+        'scope': 'email profile openid',
+        'include_granted_scopes': 'true'
+    })}"
+    st.markdown(f"""
+    <a href="{google_auth_url}">
+        <button style="background: #4285F4; color: white; font-weight: bold; padding: 10px 20px; border-radius: 10px; border: none;">
+            Sign in with Google
+        </button>
+    </a>
+    """, unsafe_allow_html=True)
 
+# --- Auth Pages ---
 def login_page():
     st.title("🔐 Login")
+    st.write("Use Email/Password or Google:")
+    google_login_button()
     email = st.text_input("Email")
     password = st.text_input("Password", type="password")
     if st.button("Login"):
@@ -52,12 +72,10 @@ def login_page():
             st.session_state.logged_in = True
             st.session_state.email = email
             st.success("Login successful!")
-        
         else:
             st.error("Invalid email or password.")
     if st.button("Go to Signup"):
         st.session_state.page = "signup"
-        
 
 def signup_page():
     st.title("📝 Signup")
@@ -71,23 +89,14 @@ def signup_page():
             save_users()
             st.success("Signup successful! Please log in.")
             st.session_state.page = "login"
-        
     if st.button("Go to Login"):
         st.session_state.page = "login"
-
 
 def logout():
     st.session_state.logged_in = False
     st.session_state.email = ""
-    
 
-def admin_dashboard():
-    st.subheader("👑 Admin Dashboard")
-    st.info("Welcome, admin! You can view user stats here.")
-    st.write(users)
-
-# --- Gemini LLM wrapper ---
-
+# --- Gemini LLM Wrapper ---
 class GeminiLLM(LLM):
     model_name: str = "gemini-1.5-flash"
     _model: Any = PrivateAttr()
@@ -111,7 +120,6 @@ class GeminiLLM(LLM):
         return LLMResult(generations=generations)
 
 # --- Background & Styling ---
-
 def get_base64_bg(path):
     with open(path, "rb") as f:
         data = f.read()
@@ -152,8 +160,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# --- Main app ---
-
+# --- Session State ---
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
     st.session_state.page = "login"
@@ -166,15 +173,13 @@ if not st.session_state.logged_in:
         signup_page()
     st.stop()
 
-# Show sidebar info and logout
+# --- Logged In Sidebar ---
 st.sidebar.success(f"Logged in as {st.session_state.email}")
 if st.sidebar.button("Logout"):
     logout()
+    st.rerun()
 
-if st.session_state.email == "admin@example.com":
-    admin_dashboard()
-
-# --- Caching generation ---
+# --- Generation Cache ---
 if os.path.exists(CACHE_FILE):
     with open(CACHE_FILE, "rb") as f:
         cache = pickle.load(f)
@@ -215,4 +220,5 @@ if user_input:
             st.markdown(f'<div class="output-box">{result}</div>', unsafe_allow_html=True)
 else:
     st.info("Fill in the product/brand description to begin.")
+
 
