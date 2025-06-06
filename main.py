@@ -110,20 +110,16 @@ html, body, [data-testid="stApp"] {{
     text-shadow: 1px 1px 2px rgba(0,0,0,0.6);
 }}
 
-[data-testid="stSelectbox"] label,
-[data-testid="stTextInput"] label {{
+[data-testid="stTextInput"] label,
+[data-testid="stSelectbox"] label {{
     color: #f3f3f3;
     text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6);
 }}
 
 [data-testid="stTextInput"] input {{
     background-color: rgba(255, 255, 255, 0.9);
-    color: black;
-    padding: 8px;
-    border-radius: 5px;
-}}
-</style>
-""", unsafe_allow_html=True)
+    color:
+
 
 st.markdown("""
 <div class="title-container">
