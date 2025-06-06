@@ -68,12 +68,10 @@ def signup_page():
             st.experimental_rerun()
     if st.button("Go to Login"):
         st.session_state.page = "login"
-        st.experimental_rerun()
 
 def logout():
     st.session_state.logged_in = False
     st.session_state.email = ""
-    st.experimental_rerun()
 
 def admin_dashboard():
     st.subheader("👑 Admin Dashboard")
