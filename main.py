@@ -35,7 +35,6 @@ def login_page():
                 st.success("Login successful!")
                 st.session_state.logged_in = True
                 st.session_state.email = email
-                st.experimental_rerun()
             else:
                 st.error("Invalid email or password.")
 
@@ -44,7 +43,6 @@ def logout_button():
     st.sidebar.markdown(f"👋 Logged in as `{st.session_state.get('email', '')}`")
     if st.sidebar.button("🚪 Logout"):
         st.session_state.logged_in = False
-        st.experimental_rerun()
 
 # --- Gemini LLM Wrapper for LangChain ---
 class GeminiLLM(LLM):
