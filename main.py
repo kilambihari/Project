@@ -11,40 +11,86 @@ import time
 import base64
 import pickle
 
-# --- User credentials (For demo; move to secrets in production) ---
-USER_CREDENTIALS = {
-    "kilambihari@gmail.com": "pass123",
-    "admin@example.com": "adminpass"
-}
-
-# --- Set Streamlit page config ---
+# -------------------
+# Streamlit Config
+# -------------------
 st.set_page_config(page_title="☁️ AI Marketing Generator", layout="centered")
 
-# --- Login Page ---
-def login_page():
-    st.title("🔐 Login to AI Marketing Generator")
-    st.write("Please enter your credentials to continue.")
-    
-    with st.form("login_form"):
-        email = st.text_input("Email")
-        password = st.text_input("Password", type="password")
-        submitted = st.form_submit_button("Login")
-        
-        if submitted:
-            if email in USER_CREDENTIALS and USER_CREDENTIALS[email] == password:
-                st.success("Login successful!")
-                st.session_state.logged_in = True
-                st.session_state.email = email
-            else:
-                st.error("Invalid email or password.")
+# -------------------
+# Load Gemini API Key
+# -------------------
+API_KEY = st.secrets.get("GEMINI_API_KEY")
+if not API_KEY:
+    st.error("Set your GEMINI_API_KEY in Streamlit secrets.")
+    st.stop()
 
-# --- Logout Button ---
-def logout_button():
-    st.sidebar.markdown(f"👋 Logged in as `{st.session_state.get('email', '')}`")
-    if st.sidebar.button("🚪 Logout"):
-        st.session_state.logged_in = False
+# -------------------
+# Background Setup
+# -------------------
+def get_base64_bg(path):
+    with open(path, "rb") as f:
+        data = f.read()
+    return base64.b64encode(data).decode()
 
-# --- Gemini LLM Wrapper for LangChain ---
+background_path = "pexels-freestockpro-31391838.jpg"  # Ensure this exists
+bg_base64 = get_base64_bg(background_path)
+
+st.markdown(f"""
+<style>
+html, body, [data-testid="stApp"] {{
+    background-image: url("data:image/jpg;base64,{bg_base64}");
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-position: center;
+    color: #f3f3f3;
+    font-family: 'Segoe UI', sans-serif;
+}}
+.title-container {{
+    background: rgba(0, 0, 0, 0.75);
+    padding: 25px 30px;
+    border-radius: 15px;
+    max-width: 900px;
+    margin: 30px auto 10px auto;
+    text-align: center;
+}}
+.title-container h1 {{
+    color: #ffffff;
+    font-size: 3.2rem;
+    font-weight: 900;
+    margin-bottom: 10px;
+}}
+.subtitle {{
+    color: #eee;
+    font-size: 1.3rem;
+    margin-bottom: 20px;
+}}
+.output-box {{
+    background-color: rgba(0, 0, 0, 0.6);
+    padding: 20px;
+    border-radius: 10px;
+    margin-top: 15px;
+    color: #fff;
+    font-size: 1.25rem;
+    line-height: 1.6;
+}}
+</style>
+""", unsafe_allow_html=True)
+
+# -------------------
+# Typewriter Effect
+# -------------------
+def type_writer_effect(text, speed=0.02):
+    output = ""
+    placeholder = st.empty()
+    for char in text:
+        output += char
+        placeholder.markdown(f"<div class='typing'>{output}</div>", unsafe_allow_html=True)
+        time.sleep(speed)
+
+# -------------------
+# Gemini Wrapper
+# -------------------
 class GeminiLLM(LLM):
     model_name: str = "gemini-1.5-flash"
     _model: Any = PrivateAttr()
@@ -52,7 +98,6 @@ class GeminiLLM(LLM):
     def __init__(self, api_key: str, model_name: str = "gemini-1.5-flash"):
         super().__init__()
         genai.configure(api_key=api_key)
-        self.model_name = model_name
         self._model = genai.GenerativeModel(model_name=model_name)
 
     @property
@@ -67,71 +112,41 @@ class GeminiLLM(LLM):
         generations = [[{"text": self._call(prompt, stop)}] for prompt in prompts]
         return LLMResult(generations=generations)
 
-# --- Typewriter effect ---
-def type_writer_effect(text, speed=0.02):
-    output = ""
-    placeholder = st.empty()
-    for char in text:
-        output += char
-        placeholder.markdown(f"<div class='typing'>{output}</div>", unsafe_allow_html=True)
-        time.sleep(speed)
+# -------------------
+# Cache Setup
+# -------------------
+CACHE_FILE = "generation_cache.pkl"
+if os.path.exists(CACHE_FILE):
+    with open(CACHE_FILE, "rb") as f:
+        cache = pickle.load(f)
+else:
+    cache = {}
 
-# --- Main App Content ---
-def main_app():
-    API_KEY = st.secrets.get("GEMINI_API_KEY")
-    if not API_KEY:
-        st.error("API key not found. Set GEMINI_API_KEY in Streamlit secrets.")
-        st.stop()
+# -------------------
+# Login Credentials
+# -------------------
+USER_CREDENTIALS = {
+    "kilambihari@gmail.com": "password123",
+    "user@example.com": "welcome"
+}
 
-    def get_base64_bg(path):
-        with open(path, "rb") as f:
-            data = f.read()
-        return base64.b64encode(data).decode()
+# -------------------
+# Login Page
+# -------------------
+def login_page():
+    st.markdown("## 🔐 Login to Continue")
+    email = st.text_input("Email")
+    password = st.text_input("Password", type="password")
+    if st.button("Login"):
+        if email in USER_CREDENTIALS and USER_CREDENTIALS[email] == password:
+            st.session_state.logged_in = True
+        else:
+            st.error("Invalid email or password")
 
-    background_path = "pexels-freestockpro-31391838.jpg"
-    bg_base64 = get_base64_bg(background_path)
-
-    st.markdown(f"""
-    <style>
-    html, body, [data-testid="stApp"] {{
-        background-image: url("data:image/jpg;base64,{bg_base64}");
-        background-size: cover;
-        background-attachment: fixed;
-        color: #f3f3f3;
-    }}
-    .title-container {{
-        background: rgba(0,0,0,0.75);
-        padding: 25px 30px;
-        border-radius: 15px;
-        max-width: 900px;
-        margin: 30px auto 10px auto;
-        text-align: center;
-    }}
-    .title-container h1 {{
-        color: #fff;
-        font-size: 3.2rem;
-        font-weight: 900;
-    }}
-    .subtitle {{
-        color: #eee;
-        font-size: 1.3rem;
-        margin-bottom: 20px;
-    }}
-    .output-box {{
-        background-color: rgba(0, 0, 0, 0.6);
-        padding: 20px;
-        border-radius: 10px;
-        margin-top: 15px;
-        color: #fff;
-        font-size: 1.25rem;
-        line-height: 1.6;
-    }}
-    .typing {{
-        font-size: 1.2rem;
-    }}
-    </style>
-    """, unsafe_allow_html=True)
-
+# -------------------
+# Main App
+# -------------------
+def show_marketing_app():
     st.markdown("""
     <div class="title-container">
         <h1>☁️ AI Marketing Idea Generator</h1>
@@ -139,15 +154,8 @@ def main_app():
     </div>
     """, unsafe_allow_html=True)
 
-    CACHE_FILE = "generation_cache.pkl"
-    if os.path.exists(CACHE_FILE):
-        with open(CACHE_FILE, "rb") as f:
-            cache = pickle.load(f)
-    else:
-        cache = {}
-
-    task_type = st.selectbox(" Select what you want to generate:", ["Slogan", "Ad Copy", "Campaign Idea"])
-    user_input = st.text_input(" Describe your product or brand:", "e.g. 'A new eco-friendly recycled cotton clothing'").strip()
+    task_type = st.selectbox("What do you want to generate?", ["Slogan", "Ad Copy", "Campaign Idea"])
+    user_input = st.text_input("Describe your product or brand:", "e.g. eco-friendly cotton clothing").strip()
 
     prompt_templates = {
         "Slogan": "Create a catchy marketing slogan for: {product}",
@@ -173,21 +181,18 @@ def main_app():
                             pickle.dump(cache, f)
                     except Exception as e:
                         st.error(f"Something went wrong: {e}")
-                        result = None
+                        return
+            st.markdown("### 🎯 Generated Output")
+            st.markdown(f'<div class="output-box">{result}</div>', unsafe_allow_html=True)
 
-            if result:
-                st.markdown(" 🎯 Generated Output")
-                st.markdown(f'<div class="output-box">{result}</div>', unsafe_allow_html=True)
-    else:
-        st.info("Fill in the product/brand description to begin.")
-
-# --- Route based on login ---
+# -------------------
+# Page Control
+# -------------------
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 
 if st.session_state.logged_in:
-    logout_button()
-    main_app()
+    show_marketing_app()
 else:
     login_page()
 
