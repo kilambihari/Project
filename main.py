@@ -7,94 +7,21 @@ from langchain.chains import LLMChain
 from langchain.schema import LLMResult
 from pydantic import PrivateAttr
 from typing import List, Optional, Any
-import time
 import base64
 import pickle
-import hashlib
-import pyrebase4
-from urllib.parse import urlencode
+import pyrebase
 
 # --- Config ---
 st.set_page_config(page_title="☁️ AI Marketing Generator", layout="centered")
 
-API_KEY = st.secrets.get("GEMINI_API_KEY")
+API_KEY = st.secrets["GEMINI_API_KEY"]
 firebase_config = st.secrets["firebase"]
 
+# Initialize Firebase
 firebase = pyrebase.initialize_app(firebase_config)
 auth = firebase.auth()
 
-USERS_FILE = "users.pkl"
 CACHE_FILE = "generation_cache.pkl"
-
-# --- User Management (email/password) ---
-if os.path.exists(USERS_FILE):
-    with open(USERS_FILE, "rb") as f:
-        users = pickle.load(f)
-else:
-    users = {
-        "hari@gmail.com": {"password": hashlib.sha256("admin123".encode()).hexdigest()}
-    }
-
-def save_users():
-    with open(USERS_FILE, "wb") as f:
-        pickle.dump(users, f)
-
-def hash_password(password):
-    return hashlib.sha256(password.encode()).hexdigest()
-
-# --- Google Login ---
-def google_login_button():
-    redirect_uri = "http://localhost:8501"  # Change if hosted online
-    google_auth_url = f"https://accounts.google.com/o/oauth2/v2/auth?{urlencode({
-        'client_id': firebase_config['apiKey'],
-        'redirect_uri': redirect_uri,
-        'response_type': 'token',
-        'scope': 'email profile openid',
-        'include_granted_scopes': 'true'
-    })}"
-    st.markdown(f"""
-    <a href="{google_auth_url}">
-        <button style="background: #4285F4; color: white; font-weight: bold; padding: 10px 20px; border-radius: 10px; border: none;">
-            Sign in with Google
-        </button>
-    </a>
-    """, unsafe_allow_html=True)
-
-# --- Auth Pages ---
-def login_page():
-    st.title("🔐 Login")
-    st.write("Use Email/Password or Google:")
-    google_login_button()
-    email = st.text_input("Email")
-    password = st.text_input("Password", type="password")
-    if st.button("Login"):
-        if email in users and users[email]["password"] == hash_password(password):
-            st.session_state.logged_in = True
-            st.session_state.email = email
-            st.success("Login successful!")
-        else:
-            st.error("Invalid email or password.")
-    if st.button("Go to Signup"):
-        st.session_state.page = "signup"
-
-def signup_page():
-    st.title("📝 Signup")
-    email = st.text_input("Email")
-    password = st.text_input("Password", type="password")
-    if st.button("Signup"):
-        if email in users:
-            st.error("User already exists.")
-        else:
-            users[email] = {"password": hash_password(password)}
-            save_users()
-            st.success("Signup successful! Please log in.")
-            st.session_state.page = "login"
-    if st.button("Go to Login"):
-        st.session_state.page = "login"
-
-def logout():
-    st.session_state.logged_in = False
-    st.session_state.email = ""
 
 # --- Gemini LLM Wrapper ---
 class GeminiLLM(LLM):
@@ -125,7 +52,7 @@ def get_base64_bg(path):
         data = f.read()
     return base64.b64encode(data).decode()
 
-background_path = "pexels-freestockpro-31391838.jpg"
+background_path = "pexels-freestockpro-31391838.jpg"  # add your image to your project folder
 bg_base64 = get_base64_bg(background_path)
 
 st.markdown(f"""
@@ -160,11 +87,52 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# --- Session State ---
+# --- Session State Initialization ---
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
-    st.session_state.page = "login"
     st.session_state.email = ""
+
+# --- Authentication Functions ---
+def login_page():
+    st.title("🔐 Login")
+    email = st.text_input("Email")
+    password = st.text_input("Password", type="password")
+
+    if st.button("Login"):
+        try:
+            user = auth.sign_in_with_email_and_password(email, password)
+            st.session_state.logged_in = True
+            st.session_state.email = email
+            st.success(f"Logged in as {email}")
+        except Exception as e:
+            st.error("Login failed: check your email and password.")
+
+    if st.button("Go to Signup"):
+        st.session_state.page = "signup"
+
+def signup_page():
+    st.title("📝 Signup")
+    email = st.text_input("Email")
+    password = st.text_input("Password", type="password")
+
+    if st.button("Signup"):
+        try:
+            user = auth.create_user_with_email_and_password(email, password)
+            st.success("Signup successful! Please log in.")
+            st.session_state.page = "login"
+        except Exception as e:
+            st.error("Signup failed: possibly email already exists or weak password.")
+
+    if st.button("Go to Login"):
+        st.session_state.page = "login"
+
+def logout():
+    st.session_state.logged_in = False
+    st.session_state.email = ""
+
+# --- Page Control ---
+if not st.session_state.get("page"):
+    st.session_state.page = "login"
 
 if not st.session_state.logged_in:
     if st.session_state.page == "login":
@@ -173,19 +141,20 @@ if not st.session_state.logged_in:
         signup_page()
     st.stop()
 
-# --- Logged In Sidebar ---
+# --- Sidebar with Logout ---
 st.sidebar.success(f"Logged in as {st.session_state.email}")
 if st.sidebar.button("Logout"):
     logout()
-    st.rerun()
+    st.experimental_rerun()
 
-# --- Generation Cache ---
+# --- Load cache ---
 if os.path.exists(CACHE_FILE):
     with open(CACHE_FILE, "rb") as f:
         cache = pickle.load(f)
 else:
     cache = {}
 
+# --- Marketing Generation ---
 task_type = st.selectbox("Select what you want to generate:", ["Slogan", "Ad Copy", "Campaign Idea"])
 user_input = st.text_input("Describe your product or brand:", "e.g. 'A new eco-friendly recycled cotton clothing'").strip()
 
@@ -220,5 +189,4 @@ if user_input:
             st.markdown(f'<div class="output-box">{result}</div>', unsafe_allow_html=True)
 else:
     st.info("Fill in the product/brand description to begin.")
-
 
