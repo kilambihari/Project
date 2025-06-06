@@ -24,7 +24,6 @@ if os.path.exists(USERS_FILE):
     with open(USERS_FILE, "rb") as f:
         users = pickle.load(f)
 else:
-    # initial dummy user
     users = {
         "hari@gmail.com": {"password": hashlib.sha256("admin123".encode()).hexdigest()}
     }
@@ -83,7 +82,7 @@ html, body, [data-testid="stApp"] {{
 .title-container {{
     text-align: center;
     margin-bottom: 30px;
-    background-color: rgba(0, 0, 0, 0.5);  /* Semi-transparent dark background */
+    background-color: rgba(0, 0, 0, 0.5);
     padding: 20px;
     border-radius: 15px;
 }}
@@ -102,7 +101,7 @@ html, body, [data-testid="stApp"] {{
 }}
 
 .output-box {{
-    background: rgba(0, 0, 0, 0.6);  /* Dark background for generated text */
+    background: rgba(0, 0, 0, 0.6);
     padding: 15px;
     border-radius: 10px;
     font-size: 18px;
@@ -118,12 +117,17 @@ html, body, [data-testid="stApp"] {{
 }}
 
 [data-testid="stTextInput"] input {{
-    back
-
+    background-color: rgba(255, 255, 255, 0.9);
+    color: black;
+    padding: 8px;
+    border-radius: 5px;
+}}
+</style>
+""", unsafe_allow_html=True)
 
 st.markdown("""
 <div class="title-container">
-    <h1>"☁️ AI Marketing Idea Generator"</h1>
+    <h1>☁️ AI Marketing Idea Generator</h1>
     <p class="subtitle">Catchy <b>slogans</b>, <b>ad copies</b> and <b>bold campaign ideas. AI Marketing, Simplified.</b></p>
 </div>
 """, unsafe_allow_html=True)
@@ -169,7 +173,6 @@ def logout():
     st.session_state.email = ""
 
 # --- Main App ---
-
 if not st.session_state.logged_in:
     if st.session_state.page == "login":
         login_page()
@@ -203,27 +206,7 @@ prompt_templates = {
 if user_input:
     if st.button("🚀 Generate"):
         key = (task_type, user_input)
-        if key in cache:
-            result = cache[key]
-            st.success("Loaded from cache!")
-        else:
-            with st.spinner("Thinking..."):
-                try:
-                    llm = GeminiLLM(api_key=API_KEY)
-                    prompt = PromptTemplate.from_template(prompt_templates[task_type])
-                    chain = LLMChain(llm=llm, prompt=prompt)
-                    result = chain.run(product=user_input)
-                    cache[key] = result
-                    with open(CACHE_FILE, "wb") as f:
-                        pickle.dump(cache, f)
-                except Exception as e:
-                    st.error(f"Something went wrong: {e}")
-                    result = None
+        if key in cac
 
-        if result:
-            st.markdown("🎯 Generated Output")
-            st.markdown(f'<div class="output-box">{result}</div>', unsafe_allow_html=True)
-else:
-    st.info("Fill in the product/brand description to begin.")
 
 
