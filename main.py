@@ -189,7 +189,8 @@ def signup_page():
             save_users()
             st.success("Signup successful! Please log in.")
             st.session_state.page = "login"
-            st.experimental_rerun()
+            st.rerun()
+
     if st.button("Go to Login"):
         st.session_state.page = "login"
         st.rerun()
