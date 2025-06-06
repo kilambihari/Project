@@ -206,7 +206,27 @@ prompt_templates = {
 if user_input:
     if st.button("🚀 Generate"):
         key = (task_type, user_input)
-        if key in cac
+        if key in cache:
+            result = cache[key]
+            st.success("Loaded from cache!")
+        else:
+            with st.spinner("Thinking..."):
+                try:
+                    llm = GeminiLLM(api_key=API_KEY)
+                    prompt = PromptTemplate.from_template(prompt_templates[task_type])
+                    chain = LLMChain(llm=llm, prompt=prompt)
+                    result = chain.run(product=user_input)
+                    cache[key] = result
+                    with open(CACHE_FILE, "wb") as f:
+                        pickle.dump(cache, f)
+                except Exception as e:
+                    st.error(f"Something went wrong: {e}")
+                    result = None
 
+        if result:
+            st.markdown("🎯 Generated Output")
+            st.markdown(f'<div class="output-box">{result}</div>', unsafe_allow_html=True)
+else:
+    st.info("Fill in the product/brand description to begin.")
 
 
