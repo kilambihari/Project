@@ -118,12 +118,23 @@ html, body, [data-testid="stApp"] {{
 
 [data-testid="stTextInput"] input {{
     background-color: rgba(255, 255, 255, 0.9);
-    color:
+    color: black;  /* 👈 FIXED: Text visible */
+    padding: 8px;
+    border-radius: 5px;
+}}
+
+[data-testid="stSelectbox"] select {{
+    background-color: rgba(255, 255, 255, 0.9);
+    color: black;  /* Optional: dropdown text visibility */
+}}
+</style>
+""", unsafe_allow_html=True)
+
 
 
 st.markdown("""
 <div class="title-container">
-    <h1>☁️ AI Marketing Idea Generator</h1>
+    <h1>"☁️ AI Marketing Idea Generator"</h1>
     <p class="subtitle">Catchy <b>slogans</b>, <b>ad copies</b> and <b>bold campaign ideas. AI Marketing, Simplified.</b></p>
 </div>
 """, unsafe_allow_html=True)
