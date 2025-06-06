@@ -65,7 +65,7 @@ def get_base64_bg(path):
         data = f.read()
     return base64.b64encode(data).decode()
 
-background_path = "pexels-freestockpro-31391838.jpg"
+background_path = "background_image.jpg"
 bg_base64 = get_base64_bg(background_path)
 
 st.markdown(f"""
