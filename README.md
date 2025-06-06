@@ -25,4 +25,67 @@ An interactive AI-powered Streamlit app that generates **slogans**, **ad copies*
 ---
 
 ## 📁 Project Structure
+├── app.py # Main Streamlit application
+├── users.pkl # Stores registered users securely (hashed)
+├── generation_cache.pkl # Caches generation results for reuse
+├── pexels-freestockpro.jpg # Background image
+├── README.md # This file
+├── requirements.txt # Python dependencies
+└── .streamlit/
+└── secrets.toml # Stores API keys and Firebase config
+
+
+---
+
+## 🔧 Setup Instructions
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/kilambihari/project.git
+cd project
+
+5. Default Admin Credentials
+To log in as admin:
+
+Email: hari@gmail.com
+
+Password: admin123
+
+You can also sign up as a new user.
+
+💡 Usage
+Log in or Sign up.
+
+Choose the type of content: Slogan, Ad Copy, or Campaign Idea.
+
+Describe your brand or product.
+
+Click "🚀 Generate" to get results powered by Google Gemini AI.
+
+Results are cached and styled beautifully on the interface.
+
+🔐 Authentication Notes
+
+Email/Password credentials are stored as SHA256 hashes.
+
+User login states are stored via st.session_state.
+
+🛡️ Security
+Passwords are hashed before saving to disk.
+
+Pickled files are not encrypted; for production use, consider a proper DB and secure backend.
+
+Use HTTPS and proper OAuth2 flows in deployed settings.
+
+📜 License
+This project is open-source and available under the MIT License.
+
+✍️ Author
+Built by Harivadan Kilambi
+
+yaml
+Copy
+Edit
+
 
