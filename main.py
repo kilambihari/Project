@@ -52,12 +52,12 @@ def login_page():
             st.session_state.logged_in = True
             st.session_state.email = email
             st.success("Login successful!")
-            st.experimental_rerun()
+        
         else:
             st.error("Invalid email or password.")
     if st.button("Go to Signup"):
         st.session_state.page = "signup"
-        st.experimental_rerun()
+        
 
 def signup_page():
     st.title("📝 Signup")
@@ -71,15 +71,15 @@ def signup_page():
             save_users()
             st.success("Signup successful! Please log in.")
             st.session_state.page = "login"
-            st.experimental_rerun()
+        
     if st.button("Go to Login"):
         st.session_state.page = "login"
-        st.experimental_rerun()
+
 
 def logout():
     st.session_state.logged_in = False
     st.session_state.email = ""
-    st.experimental_rerun()
+    
 
 def admin_dashboard():
     st.subheader("👑 Admin Dashboard")
