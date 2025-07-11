@@ -10,6 +10,7 @@ from typing import List, Optional, Any
 import base64
 import pickle
 import hashlib
+import re
 
 # --- Page Config ---
 st.set_page_config(page_title="☁️ AI Marketing Generator", layout="centered")
@@ -35,6 +36,12 @@ def save_users():
 
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
+
+def is_valid_email(email):
+    return re.match(r"[^@]+@[^@]+\.[^@]+", email)
+
+def is_strong_password(password):
+    return len(password) >= 6
 
 # --- Gemini Wrapper ---
 class GeminiLLM(LLM):
@@ -165,14 +172,20 @@ def login_page():
     st.subheader("🔐 Login")
     email = st.text_input("Email", key="login_email")
     password = st.text_input("Password", type="password", key="login_password")
+
     if st.button("Login"):
-        if email in users and users[email]["password"] == hash_password(password):
+        if not is_valid_email(email):
+            st.error("Please enter a valid email address.")
+        elif not is_strong_password(password):
+            st.error("Password must be at least 6 characters long.")
+        elif email in users and users[email]["password"] == hash_password(password):
             st.session_state.logged_in = True
             st.session_state.email = email
             st.success("Login successful!")
             st.rerun()
         else:
             st.error("Invalid email or password.")
+
     if st.button("Go to Signup"):
         st.session_state.page = "signup"
         st.rerun()
@@ -181,8 +194,13 @@ def signup_page():
     st.subheader("📝 Signup")
     email = st.text_input("Email", key="signup_email")
     password = st.text_input("Password", type="password", key="signup_password")
+
     if st.button("Signup"):
-        if email in users:
+        if not is_valid_email(email):
+            st.error("Please enter a valid email address.")
+        elif not is_strong_password(password):
+            st.error("Password must be at least 6 characters long.")
+        elif email in users:
             st.error("User already exists.")
         else:
             users[email] = {"password": hash_password(password)}
