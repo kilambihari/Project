@@ -19,7 +19,7 @@ st.set_page_config(page_title="☁️ AI Marketing Generator", layout="centered"
 API_KEY = st.secrets.get("GEMINI_API_KEY", "")
 USERS_FILE = "users.pkl"
 CACHE_FILE = "generation_cache.pkl"
-BACKGROUND_IMAGE = "background_image.jpg"
+BACKGROUND_IMAGE = "pexels-freestockpro-31391838.jpg"
 
 # --- Load Users ---
 if os.path.exists(USERS_FILE):
