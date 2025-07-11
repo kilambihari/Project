@@ -4,6 +4,16 @@ An interactive AI-powered Streamlit app that generates **slogans**, **ad copies*
 
 ---
 
+## 🚀 Live Demo
+
+Click below to try the app:
+
+[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://project-eamay5pxacuhxuvqhe6xtf.streamlit.app/)
+
+Or open directly:  
+👉 https://project-eamay5pxacuhxuvqhe6xtf.streamlit.app/
+
+
 ## ✨ Features
 
 - 🔐 **User Authentication**
@@ -25,7 +35,7 @@ An interactive AI-powered Streamlit app that generates **slogans**, **ad copies*
 ---
 
 ## 📁 Project Structure
-├── app.py # Main Streamlit application
+├── main.py # Main Streamlit application
 ├── users.pkl # Stores registered users securely (hashed)
 ├── generation_cache.pkl # Caches generation results for reuse
 ├── pexels-freestockpro.jpg # Background image
