@@ -1,7 +1,8 @@
 streamlit
 google-generativeai
-langchain
+langchain==0.0.350
 pydantic
+
 
 
 
