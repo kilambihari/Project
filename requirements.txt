@@ -5,6 +5,7 @@ langchain-core==0.0.6
 langsmith==0.0.70
 pydantic==1.10.13
 protobuf<5
+rich<14
 
 
 
