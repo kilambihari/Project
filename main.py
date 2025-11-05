@@ -1,7 +1,7 @@
 import os
 import streamlit as st
 import google.generativeai as genai
-from langchain.llms.base import LLM
+from langchain_core.language_models import LLM
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
 from langchain.schema import LLMResult
@@ -305,3 +305,4 @@ if st.session_state.show_history:
 # --- Default Info ---
 if not user_input:
     st.info("Please describe your product or brand to start generating.")
+
