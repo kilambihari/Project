@@ -1,10 +1,10 @@
 import os
 import streamlit as st
 import google.generativeai as genai
-from langchain.llms.base import LLM
-from langchain.prompts import PromptTemplate
-from langchain.chains import LLMChain
-from langchain.schema import LLMResult
+from langchain_core.language_models import LLM
+from langchain_core.prompts import PromptTemplate
+from langchain_core.chains import LLMChain
+from langchain_core.outputs import LLMResult
 from pydantic import PrivateAttr
 from typing import List, Optional, Any
 import base64
@@ -31,8 +31,11 @@ else:
     }
 
 def save_users():
-    with open(USERS_FILE, "wb") as f:
-        pickle.dump(users, f)
+    try:
+        with open(USERS_FILE, "wb") as f:
+            pickle.dump(users, f)
+    except:
+        st.warning("User data could not be saved (cloud mode).")
 
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
@@ -305,5 +308,6 @@ if st.session_state.show_history:
 # --- Default Info ---
 if not user_input:
     st.info("Please describe your product or brand to start generating.")
+
 
 
